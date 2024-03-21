@@ -18,18 +18,33 @@ import imageeditor.composeapp.generated.resources.compose_multiplatform
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 @Preview
-fun App() {
+internal fun App() {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = { showContent = !showContent }
+            ) {
+                Text("Fuck me!")
             }
+
             AnimatedVisibility(showContent) {
                 val greeting = remember { Greeting().greet() }
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.compose_multiplatform),
+                        contentDescription = null
+                    )
+
+                    Text(text = "Compose: $greeting")
                 }
             }
         }
