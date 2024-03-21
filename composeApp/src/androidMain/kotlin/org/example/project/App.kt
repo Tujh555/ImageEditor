@@ -1,17 +1,16 @@
-import android.annotation.SuppressLint
+package org.example.project
+
 import android.app.Application
 import android.content.Context
 
 class App : Application() {
-
     override fun onCreate() {
         super.onCreate()
 
-        context = applicationContext
+        appContext = applicationContext
     }
 
     companion object {
-        @SuppressLint("StaticFieldLeak")
-        lateinit var context: Context
+        lateinit var appContext: Context
     }
 }

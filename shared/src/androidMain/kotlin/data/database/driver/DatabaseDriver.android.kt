@@ -1,14 +1,16 @@
 package data.database.driver
 
-import App
+import android.content.Context
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.example.project.Database
 
-actual class DriverFactory actual constructor(){
-    actual fun create(): SqlDriver = AndroidSqliteDriver(
-        schema = Database.Schema,
-        context = App.context,
-        name = DATABASE_NAME
+class DatabaseFactoryAndroid(private val context: Context) : DatabaseFactory {
+    override fun create(): Database = Database(
+        AndroidSqliteDriver(
+            schema = Database.Schema,
+            context = context,
+            name = DATABASE_NAME
+        )
     )
 }

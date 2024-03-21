@@ -1,9 +1,10 @@
 package data.database.driver
 
 import app.cash.sqldelight.db.SqlDriver
+import com.example.project.Database
 
-expect class DriverFactory() {
-    fun create(): SqlDriver
+interface DatabaseFactory {
+    fun create(): Database
 }
 
 const val DATABASE_NAME = "test.db"
