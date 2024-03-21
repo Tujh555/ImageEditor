@@ -8,8 +8,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
+import data.database.driver.DatabaseFactoryAndroid
+import data.repository.TestRepositoryImpl
 import data.repository.testRepository
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -30,9 +33,14 @@ internal fun AppContent() {
             mutableStateOf(listOf<String>())
         }
 
+        val cn = LocalContext.current
+        val repository = remember {
+            TestRepositoryImpl(DatabaseFactoryAndroid(cn))
+        }
+
         LaunchedEffect(key1 = Unit) {
             titles = withContext(Dispatchers.IO) {
-                testRepository.getAllSortedByRating().fastMap { it.title }
+                repository.getAllSortedByRating().fastMap { it.title }
             }
         }
 

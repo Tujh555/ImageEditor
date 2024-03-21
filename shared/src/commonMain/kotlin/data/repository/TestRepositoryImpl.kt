@@ -1,18 +1,16 @@
 package data.repository
 
-import data.database.DatabaseInstance
+import data.database.driver.DatabaseFactory
 import domain.TestData
 import domain.TestRepository
 
-internal class TestRepositoryImpl : TestRepository {
+class TestRepositoryImpl(private val factory: DatabaseFactory) : TestRepository {
 
-    override suspend fun getAllSortedByRating() = DatabaseInstance
-        .get()
+    override suspend fun getAllSortedByRating() = factory
+        .create()
         .test_tableQueries
         .entriesSortedByRating { id, title, rating ->
             TestData(id, title, rating)
         }
         .executeAsList()
 }
-
-val testRepository: TestRepository = TestRepositoryImpl()
