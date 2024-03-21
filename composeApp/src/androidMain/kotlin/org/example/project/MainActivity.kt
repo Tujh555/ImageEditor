@@ -1,6 +1,6 @@
 package org.example.project
 
-import App
+import AppContent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,7 +12,7 @@ internal class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            AppContent()
         }
     }
 }
@@ -20,5 +20,5 @@ internal class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 private fun AppAndroidPreview() {
-    App()
+    AppContent()
 }
