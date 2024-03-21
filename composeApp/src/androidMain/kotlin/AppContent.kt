@@ -8,19 +8,33 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
+import data.repository.testRepository
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import imageeditor.composeapp.generated.resources.Res
 import imageeditor.composeapp.generated.resources.compose_multiplatform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 @Preview
-internal fun App() {
+internal fun AppContent() {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
+        var titles by remember {
+            mutableStateOf(listOf<String>())
+        }
+
+        LaunchedEffect(key1 = Unit) {
+            titles = withContext(Dispatchers.IO) {
+                testRepository.getAllSortedByRating().fastMap { it.title }
+            }
+        }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -46,6 +60,10 @@ internal fun App() {
 
                     Text(text = "Compose: $greeting")
                 }
+            }
+
+            titles.fastForEach {
+                Text(text = it)
             }
         }
     }

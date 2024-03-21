@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -23,6 +24,28 @@ kotlin {
             isStatic = true
         }
     }
+    
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.sqldelight.coroutines)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.sqldelight.android)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.sqldelight.ios)
+        }
+    }
+
+    targets.configureEach {
+        compilations.configureEach {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+        }
+    }
 }
 
 android {
@@ -34,5 +57,13 @@ android {
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName = "com.example.project"
+        }
     }
 }
