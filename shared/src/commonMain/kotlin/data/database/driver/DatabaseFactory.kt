@@ -3,7 +3,7 @@ package data.database.driver
 import app.cash.sqldelight.db.SqlDriver
 import com.example.project.Database
 
-interface DatabaseFactory {
+expect class DatabaseFactory {
     fun create(): Database
 }
 
