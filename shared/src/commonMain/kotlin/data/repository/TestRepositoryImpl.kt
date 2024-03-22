@@ -4,7 +4,7 @@ import data.database.driver.DatabaseFactory
 import domain.TestData
 import domain.TestRepository
 
-class TestRepositoryImpl(private val factory: DatabaseFactory) : TestRepository {
+internal class TestRepositoryImpl(private val factory: DatabaseFactory) : TestRepository {
 
     override suspend fun getAllSortedByRating() = factory
         .create()
