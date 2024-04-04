@@ -23,12 +23,6 @@ kotlin {
             isStatic = true
         }
     }
-    
-    sourceSets {
-        commonMain.dependencies {
-            // put your Multiplatform dependencies here
-        }
-    }
 }
 
 android {
