@@ -62,6 +62,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     dependencies {
+        implementation(libs.dateTime)
         debugImplementation(libs.compose.ui.tooling)
     }
 }
