@@ -1,5 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -63,6 +61,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     dependencies {
+        implementation(libs.dateTime)
         debugImplementation(libs.compose.ui.tooling)
     }
 }

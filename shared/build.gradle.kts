@@ -6,6 +6,8 @@ plugins {
 }
 
 kotlin {
+    task("testClasses")
+
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -28,10 +30,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.sqldelight.coroutines)
+            implementation(libs.coroutines.core)
+            implementation(libs.dateTime)
         }
 
         androidMain.dependencies {
             implementation(libs.sqldelight.android)
+            implementation(libs.dateTime)
         }
 
         iosMain.dependencies {
@@ -62,8 +67,8 @@ android {
 
 sqldelight {
     databases {
-        create("Database") {
-            packageName = "com.example.project"
+        create("ImageDatabase") {
+            packageName = "com.example.project.shared"
         }
     }
 }
