@@ -2,9 +2,12 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
+    task("testClasses")
+
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -26,7 +29,26 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            implementation(libs.sqldelight.coroutines)
+            implementation(libs.coroutines.core)
+            implementation(libs.dateTime)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.sqldelight.android)
+            implementation(libs.dateTime)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.sqldelight.ios)
+        }
+    }
+
+    targets.configureEach {
+        compilations.configureEach {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
         }
     }
 }
@@ -40,5 +62,13 @@ android {
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+}
+
+sqldelight {
+    databases {
+        create("ImageDatabase") {
+            packageName = "com.example.project.shared"
+        }
     }
 }
