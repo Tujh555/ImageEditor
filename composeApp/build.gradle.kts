@@ -19,6 +19,7 @@ kotlin {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.compose.runtime)
+            implementation(libs.compoe.animation)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -63,6 +64,16 @@ android {
     }
     dependencies {
         implementation(libs.dateTime)
+        implementation(libs.compoe.animation)
+        implementation(libs.androidx.core.ktx)
+        implementation(libs.voyager.navigator)
+        implementation(libs.voyager.screen.model)
+        implementation(libs.voyager.transitions)
+        implementation(libs.voyager.koin)
+        implementation(platform(libs.koin.bom))
+        implementation(libs.koin.core)
+        implementation(libs.koin.android)
+
         debugImplementation(libs.compose.ui.tooling)
     }
 }

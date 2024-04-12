@@ -9,6 +9,8 @@ interface CommonApi {
     val repository: ImageRepository
 }
 
+fun CommonApi(dependencies: PlatformDependencies): CommonApi = CommonApiImpl(dependencies)
+
 internal class CommonApiImpl(dependencies: PlatformDependencies) : CommonApi {
     private val database = ImageDatabase(dependencies.databaseDriver, imageEntityAdapter)
     override val repository: ImageRepository = ImageRepositoryImpl(database)
