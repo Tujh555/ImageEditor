@@ -9,6 +9,11 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
+
+                freeCompilerArgs += listOf(
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf"
+                )
             }
         }
     }
@@ -73,6 +78,8 @@ android {
         implementation(platform(libs.koin.bom))
         implementation(libs.koin.core)
         implementation(libs.koin.android)
+        implementation(libs.coil)
+        implementation(libs.compose.material3)
 
         debugImplementation(libs.compose.ui.tooling)
     }

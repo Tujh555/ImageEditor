@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS ImageEntity(
 );
 
 selectAll:
-SELECT * FROM ImageEntity;
+SELECT * FROM ImageEntity ORDER BY save_date;
 
 insert:
 INSERT OR REPLACE INTO ImageEntity(id, name, save_date, path)
