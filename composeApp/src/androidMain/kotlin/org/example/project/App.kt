@@ -3,6 +3,7 @@ package org.example.project
 import android.app.Application
 import org.example.project.di.modules.commonModule
 import org.example.project.di.modules.compressorModule
+import org.example.project.di.modules.dataModule
 import org.example.project.di.modules.presentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -14,7 +15,7 @@ internal class App : Application() {
 
         startKoin {
             androidContext(applicationContext)
-            modules(commonModule, presentationModule, compressorModule)
+            modules(commonModule, presentationModule, compressorModule, dataModule)
         }
     }
 }

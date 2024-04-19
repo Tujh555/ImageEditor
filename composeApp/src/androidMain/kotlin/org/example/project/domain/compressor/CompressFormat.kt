@@ -1,4 +1,4 @@
-package org.example.project.domain
+package org.example.project.domain.compressor
 
 sealed interface CompressFormat {
     val quantity: Int

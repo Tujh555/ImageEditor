@@ -1,4 +1,4 @@
-package tech.inno.dion.chat.image.editor.compressor
+package org.example.project.data
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -8,9 +8,12 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.net.toUri
-import org.example.project.domain.CompressFormat
-import org.example.project.domain.Resolution
+import implementation.domain.models.Resource
+import implementation.domain.models.toSuccessResource
+import kotlinx.datetime.Clock
+import org.example.project.domain.compressor.CompressFormat
 import org.example.project.domain.compressor.ImageCompressor
+import org.example.project.domain.compressor.Resolution
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -19,14 +22,15 @@ import kotlin.math.log2
 
 @Suppress("DEPRECATION")
 internal class ImageCompressorImpl(private val context: Context) : ImageCompressor {
+    private val randomString: String
+        get() = Clock.System.now().toEpochMilliseconds().toString()
 
     override fun compress(
         original: Uri,
-        saveToFolder: String,
         fileName: String,
         targetResolution: Resolution,
         format: CompressFormat?,
-    ): Uri? {
+    ): Resource<Uri> {
         val realImageResolution = original.getResolution()
 
         val bitmap = if (realImageResolution.maxSide <= targetResolution.maxSide) {
@@ -40,16 +44,17 @@ internal class ImageCompressorImpl(private val context: Context) : ImageCompress
         }
 
         return if (bitmap == null || format == null) {
-            original
+            original.toSuccessResource()
         } else {
-            bitmap.use {
+            val uri = bitmap.use {
                 writeCompressed(
                     original = it,
                     compressFormat = format,
-                    folderPath = saveToFolder,
                     fileName = fileName,
                 )
             }
+
+            uri?.toSuccessResource() ?: Resource.Failure()
         }
     }
 
@@ -72,19 +77,23 @@ internal class ImageCompressorImpl(private val context: Context) : ImageCompress
 
     private fun writeCompressed(
         original: Bitmap,
-        folderPath: String,
         fileName: String,
         compressFormat: CompressFormat,
     ): Uri? {
         val extension = compressFormat.getFileExtension()
         val nameWithoutExtension = fileName.removeExtension()
-        val compressedFile = File(folderPath, "${nameWithoutExtension}_cmp$extension")
-            .apply {
-                if (exists()) {
-                    delete()
+        val compressedFile = File(context.filesDir, "${nameWithoutExtension}_cmp$extension")
+            .let {
+                if (it.exists()) {
+                    val newFile = File(
+                        context.filesDir,
+                        "${nameWithoutExtension + randomString}_cmp$extension"
+                    )
+                    newFile.createNewFile()
+                    newFile
+                } else {
+                    it
                 }
-
-                createNewFile()
             }
 
         val isCompressed = compressedFile.outputStream()

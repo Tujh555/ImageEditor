@@ -8,7 +8,8 @@ internal val presentationModule = module {
     factory {
         ImageListScreenModel(
             repository = get(),
-            formatter = get()
+            formatter = get(),
+            saveImage = get()
         )
     }
 

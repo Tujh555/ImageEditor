@@ -1,5 +1,6 @@
 package org.example.project.presentation.image.list
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.koin.getScreenModel
@@ -13,7 +14,9 @@ internal class ImageListScreen :
     data class State(val imagesDateMap: Map<String, List<ImageUiModel>> = emptyMap())
 
     @Immutable
-    sealed interface Action
+    sealed interface Action {
+        data class SaveImage(val uri: Uri) : Action
+    }
 
     @Composable
     override fun Content(state: State, onAction: (Action) -> Unit) {
