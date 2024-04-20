@@ -14,6 +14,7 @@ import kotlinx.datetime.Clock
 import org.example.project.domain.compressor.CompressFormat
 import org.example.project.domain.compressor.ImageCompressor
 import org.example.project.domain.compressor.Resolution
+import org.example.project.imageRootDirectory
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -82,19 +83,22 @@ internal class ImageCompressorImpl(private val context: Context) : ImageCompress
     ): Uri? {
         val extension = compressFormat.getFileExtension()
         val nameWithoutExtension = fileName.removeExtension()
-        val compressedFile = File(context.filesDir, "${nameWithoutExtension}_cmp$extension")
-            .let {
-                if (it.exists()) {
-                    val newFile = File(
-                        context.filesDir,
-                        "${nameWithoutExtension + randomString}_cmp$extension"
-                    )
-                    newFile.createNewFile()
-                    newFile
-                } else {
-                    it
-                }
+        val compressedFile = File(
+            context.imageRootDirectory,
+            "${nameWithoutExtension}_cmp$extension"
+        ).let {
+            if (it.exists()) {
+                val newFile = File(
+                    context.imageRootDirectory,
+                    "${nameWithoutExtension + randomString}_cmp$extension"
+                )
+                newFile.createNewFile()
+                newFile
+            } else {
+                it.createNewFile()
+                it
             }
+        }
 
         val isCompressed = compressedFile.outputStream()
             .use { outputStream ->
