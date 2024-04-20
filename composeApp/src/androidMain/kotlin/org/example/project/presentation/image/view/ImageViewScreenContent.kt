@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,13 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 
 @Composable
 internal fun ImageViewScreenContent(
@@ -35,6 +34,8 @@ internal fun ImageViewScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        state.imageEditor.Content()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -67,13 +68,19 @@ internal fun ImageViewScreenContent(
             )
         }
 
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .crossfade(true)
-                .data(state.image.path)
-                .build(),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize()
-        )
+        FloatingActionButton(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .imePadding()
+                .padding(
+                    start = 24.dp,
+                    bottom = 24.dp
+                ),
+            onClick = {
+                onAction(ImageViewScreen.Action.Save)
+            }
+        ) {
+            Text("Save as file")
+        }
     }
 }

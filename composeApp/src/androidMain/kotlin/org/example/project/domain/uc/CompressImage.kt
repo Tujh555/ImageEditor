@@ -12,7 +12,7 @@ import org.example.project.domain.compressor.ImageCompressor
 import org.example.project.domain.metadata.MetadataLoader
 import java.util.UUID
 
-internal class SaveImage(
+internal class CompressImage(
     private val repository: ImageRepository,
     private val metadataLoader: MetadataLoader,
     private val imageCompressor: ImageCompressor

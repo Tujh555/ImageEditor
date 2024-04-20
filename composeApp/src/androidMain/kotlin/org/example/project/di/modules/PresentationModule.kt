@@ -10,12 +10,12 @@ internal val presentationModule = module {
         ImageListScreenModel(
             repository = get(),
             formatter = get(),
-            saveImage = get()
+            compressImage = get()
         )
     }
 
     factory {
-        ImageViewScreenModel(get())
+        ImageViewScreenModel(get(), get())
     }
 
     single { ImageListFormatter(get()) }

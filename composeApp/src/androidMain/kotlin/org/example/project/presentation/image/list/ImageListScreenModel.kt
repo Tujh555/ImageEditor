@@ -8,14 +8,14 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.project.domain.uc.SaveImage
+import org.example.project.domain.uc.CompressImage
 import org.example.project.presentation.base.BaseScreenModel
 import org.example.project.presentation.mapper.ImageListFormatter
 
 internal class ImageListScreenModel(
     private val repository: ImageRepository,
     private val formatter: ImageListFormatter,
-    private val saveImage: SaveImage
+    private val compressImage: CompressImage
 ) : BaseScreenModel<ImageListScreen.Action, ImageListScreen.State>(
     initialState = ImageListScreen.State()
 ) {
@@ -31,7 +31,7 @@ internal class ImageListScreenModel(
 
     private fun save(uri: Uri) {
         ioScope.launch {
-            saveImage(uri)
+            compressImage(uri)
                 .onSuccess {
                     // TODO snack
                 }

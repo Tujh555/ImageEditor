@@ -12,7 +12,8 @@ kotlin {
 
                 freeCompilerArgs += listOf(
                     "-P",
-                    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf"
+                    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf",
+                    "-Xcontext-receivers"
                 )
             }
         }

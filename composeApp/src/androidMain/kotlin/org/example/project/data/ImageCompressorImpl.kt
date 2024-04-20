@@ -14,6 +14,8 @@ import kotlinx.datetime.Clock
 import org.example.project.domain.compressor.CompressFormat
 import org.example.project.domain.compressor.ImageCompressor
 import org.example.project.domain.compressor.Resolution
+import org.example.project.domain.compressor.asBitmapCompressFormat
+import org.example.project.domain.compressor.getFileExtension
 import org.example.project.imageRootDirectory
 import java.io.File
 import java.io.FileNotFoundException
@@ -85,12 +87,12 @@ internal class ImageCompressorImpl(private val context: Context) : ImageCompress
         val nameWithoutExtension = fileName.removeExtension()
         val compressedFile = File(
             context.imageRootDirectory,
-            "${nameWithoutExtension}_cmp$extension"
+            "${nameWithoutExtension}$extension"
         ).let {
             if (it.exists()) {
                 val newFile = File(
                     context.imageRootDirectory,
-                    "${nameWithoutExtension + randomString}_cmp$extension"
+                    "${nameWithoutExtension + randomString}$extension"
                 )
                 newFile.createNewFile()
                 newFile
@@ -144,27 +146,6 @@ internal class ImageCompressorImpl(private val context: Context) : ImageCompress
         } catch (e: IOException) {
             null
         }
-
-    private fun CompressFormat.asBitmapCompressFormat() = when (this) {
-        is CompressFormat.Jpeg ->
-            Bitmap.CompressFormat.JPEG
-
-        is CompressFormat.Png ->
-            Bitmap.CompressFormat.PNG
-
-        is CompressFormat.Webp ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                Bitmap.CompressFormat.WEBP_LOSSY
-            } else {
-                Bitmap.CompressFormat.WEBP
-            }
-    }
-
-    private fun CompressFormat.getFileExtension() = when (this) {
-        is CompressFormat.Jpeg -> ".jpg"
-        is CompressFormat.Png -> ".png"
-        is CompressFormat.Webp -> ".webp"
-    }
 
     private inline fun <T> Bitmap.use(action: (Bitmap) -> T): T {
         val result = action(this)

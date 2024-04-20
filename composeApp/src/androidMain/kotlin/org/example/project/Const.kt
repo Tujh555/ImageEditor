@@ -13,3 +13,5 @@ internal val Context.imageRootDirectory: File
                 mkdirs()
             }
         }
+
+internal fun File.child(name: String) = File(this, name).apply { createNewFile() }
