@@ -4,7 +4,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -22,8 +24,8 @@ import tech.inno.dion.chat.image.editor.transformation.Transformation
 
 internal class DrawTransformation : Transformation {
     private val drawPath = Path()
-    private val motionEvent = mutableStateOf<MotionEvent>(MotionEvent.Unspecified)
-    private val previousPosition = mutableStateOf(Offset.Unspecified)
+    private var motionEvent by mutableStateOf<MotionEvent>(MotionEvent.Unspecified)
+    private var previousPosition by mutableStateOf(Offset.Unspecified)
     private val pathPaint = Paint().apply {
         color = Color.Green
         strokeWidth = 10f
@@ -32,27 +34,27 @@ internal class DrawTransformation : Transformation {
 
     context(DrawScope)
     override fun drawOnCanvas(canvas: ComposeCanvas) {
-        when (motionEvent.value) {
-            is MotionEvent.Down -> drawPath.moveTo(motionEvent.value.x, motionEvent.value.y)
+        when (motionEvent) {
+            is MotionEvent.Down -> drawPath.moveTo(motionEvent.x, motionEvent.y)
 
-            is MotionEvent.Move -> if (previousPosition.value.isUnspecified.not()) {
+            is MotionEvent.Move -> if (previousPosition.isUnspecified.not()) {
                 drawPath
                     .quadraticTo(
-                        x1 = previousPosition.value.x,
-                        y1 = previousPosition.value.y,
-                        x2 = (previousPosition.value.x + motionEvent.value.x) / 2,
-                        y2 = (previousPosition.value.y + motionEvent.value.y) / 2
+                        x1 = previousPosition.x,
+                        y1 = previousPosition.y,
+                        x2 = (previousPosition.x + motionEvent.x) / 2,
+                        y2 = (previousPosition.y + motionEvent.y) / 2
                     )
             }
 
-            is MotionEvent.Up -> motionEvent.value = MotionEvent.Unspecified
+            is MotionEvent.Up -> motionEvent = MotionEvent.Unspecified
 
             MotionEvent.Unspecified -> {
                 // just ignore
             }
         }
 
-        previousPosition.value = motionEvent.value.position
+        previousPosition = motionEvent.position
 
         canvas.drawPath(
             path = drawPath,
@@ -67,7 +69,7 @@ internal class DrawTransformation : Transformation {
                 .fillMaxSize()
                 .onOneTouchEvents(key = safeRect) { event ->
                     if (safeRect.contains(event.position)) {
-                        motionEvent.value = event
+                        motionEvent = event
                     }
                 }
                 .border(width = 1.dp, color = Color.Red)
