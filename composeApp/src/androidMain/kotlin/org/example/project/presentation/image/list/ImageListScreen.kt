@@ -11,7 +11,10 @@ internal class ImageListScreen :
     BaseScreen<ImageListScreen.Action, ImageListScreen.State, ImageListScreenModel>() {
 
     @Immutable
-    data class State(val imagesDateMap: Map<String, List<ImageUiModel>> = emptyMap())
+    data class State(
+        val imagesDateMap: Map<String, List<ImageUiModel>> = emptyMap(),
+        val isLoading: Boolean = false
+    )
 
     @Immutable
     sealed interface Action {

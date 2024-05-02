@@ -82,6 +82,7 @@ android {
         implementation(libs.coil)
         implementation(libs.compose.material3)
         implementation(libs.androidx.activity.compose)
+        implementation(libs.androidx.crypto)
 
         debugImplementation(libs.compose.ui.tooling)
     }

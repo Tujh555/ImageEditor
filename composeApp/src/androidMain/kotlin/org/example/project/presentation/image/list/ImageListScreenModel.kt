@@ -1,9 +1,11 @@
 package org.example.project.presentation.image.list
 
+import android.content.SharedPreferences
 import android.net.Uri
 import implementation.domain.models.onError
 import implementation.domain.models.onSuccess
 import implementation.domain.repository.ImageRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -42,14 +44,25 @@ internal class ImageListScreenModel(
     }
 
     private fun observeImageList() {
+        _state.update {
+            it.copy(
+                isLoading = true
+            )
+        }
+
         repository
             .list
             .onEach { images ->
+                if (state.value.isLoading) {
+                    delay(1000)
+                }
+
                 val imageMap = formatter.format(images)
 
                 _state.update {
                     it.copy(
-                        imagesDateMap = imageMap
+                        imagesDateMap = imageMap,
+                        isLoading = false
                     )
                 }
             }

@@ -1,4 +1,4 @@
-package org.example.project.editor.gestures
+package org.example.project.editor.modifiers.gestures
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown

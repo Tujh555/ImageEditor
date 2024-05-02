@@ -1,4 +1,4 @@
-package org.example.project.editor.gestures
+package org.example.project.editor.modifiers.gestures
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset

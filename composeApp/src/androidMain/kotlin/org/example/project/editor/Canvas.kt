@@ -6,3 +6,6 @@ typealias ComposeCanvas = Canvas
 typealias AndroidCanvas = android.graphics.Canvas
 
 fun AndroidCanvas.asCompose() = Canvas(this)
+
+@Suppress("FunctionName")
+fun ComposeCanvas(other: AndroidCanvas) = Canvas(other)

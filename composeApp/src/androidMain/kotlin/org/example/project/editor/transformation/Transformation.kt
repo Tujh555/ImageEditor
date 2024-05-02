@@ -1,17 +1,14 @@
-package tech.inno.dion.chat.image.editor.transformation
+package org.example.project.editor.transformation
 
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import org.example.project.editor.ComposeCanvas
 
 @Stable
 interface Transformation {
 
-    context(DrawScope)
-    fun drawOnCanvas(canvas: ComposeCanvas)
+    suspend fun save(): Bitmap
 
     @Composable
-    fun Content(safeRect: Rect)
+    fun Content()
 }
