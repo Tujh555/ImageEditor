@@ -1,5 +1,6 @@
 package org.example.project
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,5 +21,7 @@ internal class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
     }
 }

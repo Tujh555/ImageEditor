@@ -1,9 +1,6 @@
 package org.example.project.presentation.image.list
 
 import android.net.Uri
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +44,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,22 +63,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.security.crypto.EncryptedFile
-import androidx.security.crypto.MasterKeys
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.example.project.R
 import org.example.project.domain.uc.CreateFileForCamera
-import org.example.project.imageRootDirectory
 import org.example.project.presentation.image.view.ImageViewScreen
 import org.example.project.presentation.models.ImageUiModel
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -359,8 +350,9 @@ private fun AddImageButton(
         SmallFloatingActionButton(
             onClick = {
                 isExpanded = false
-                uriForCamera = CreateFileForCamera(context).invoke()
-                getImageFromCameraContract.launch(uriForCamera)
+                val cameraUri = CreateFileForCamera(context).invoke()
+                getImageFromCameraContract.launch(cameraUri)
+                uriForCamera = cameraUri
             },
             modifier = Modifier
                 .offset { cameraButtonOffset },
