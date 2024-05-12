@@ -25,7 +25,6 @@ internal class ImageViewScreen(
         data class Save(val bitmap: Bitmap) : Action
         data class UpdateBitmap(val bitmap: Bitmap) : Action
         data class SelectTransformation(val transformation: Transformation) : Action
-        data object DropTransformation : Action
     }
 
     @Composable

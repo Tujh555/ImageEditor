@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,7 +53,6 @@ import org.example.project.editor.modifiers.gestures.onOneTouchEvents
 import org.example.project.editor.transformation.Transformation
 
 class DrawTransformation(private val imagePath: Uri) : Transformation {
-    private val drawPath = Path()
     private var previousPosition by mutableStateOf(Offset.Unspecified)
     private var drawRect by mutableStateOf(Rect.Zero)
     private var motionEvent by mutableStateOf<MotionEvent>(MotionEvent.Unspecified)
@@ -63,13 +63,15 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
         Color.Green,
         Color.Yellow,
     )
-    private var selectedColor by mutableStateOf(Color.Green)
-
-    private val pathPaint = Paint().apply {
-        color = selectedColor
-        strokeWidth = strokeWidth
-        style = PaintingStyle.Stroke
-    }
+    private var pictureCanvas by mutableStateOf<AndroidCanvas?>(null)
+    private val paths = mutableStateListOf(
+        Path() to Paint().apply {
+            color = Color.Red
+            strokeWidth = 10f
+            style = PaintingStyle.Stroke
+            isAntiAlias = true
+        }
+    )
 
     private val picture by mutableStateOf(Picture())
     override val iconRes: Int = R.drawable.ic_brush
@@ -88,7 +90,6 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
 
     @Composable
     override fun Content() {
-
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -105,17 +106,23 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                         val width = this.size.width.toInt()
                         val height = this.size.height.toInt()
 
-                        val pictureCanvas = Canvas(picture.beginRecording(width, height))
+                        val canvas = picture.beginRecording(width, height)
+                        val drawCanvas = Canvas(canvas)
 
-                        draw(this, this.layoutDirection, pictureCanvas, this.size) {
+                        pictureCanvas = canvas
+
+                        draw(this, this.layoutDirection, drawCanvas, this.size) {
                             this@drawWithContent.drawContent()
                         }
+
+                        val lastPath = paths.lastOrNull()?.first
+
                         when (motionEvent) {
-                            is MotionEvent.Down -> drawPath.moveTo(motionEvent.x, motionEvent.y)
+                            is MotionEvent.Down -> lastPath?.moveTo(motionEvent.x, motionEvent.y)
 
                             is MotionEvent.Move ->
                                 if (previousPosition.isUnspecified.not()) {
-                                    drawPath.quadraticTo(
+                                    lastPath?.quadraticTo(
                                         x1 = previousPosition.x,
                                         y1 = previousPosition.y,
                                         x2 = (previousPosition.x + motionEvent.x) / 2,
@@ -132,10 +139,12 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
 
                         previousPosition = motionEvent.position
 
-                        pictureCanvas.drawPath(
-                            path = drawPath,
-                            paint = pathPaint
-                        )
+                        paths.fastForEach { (drawPath, pathPaint) ->
+                            drawCanvas.drawPath(
+                                path = drawPath,
+                                paint = pathPaint
+                            )
+                        }
 
                         picture.endRecording()
 
@@ -169,6 +178,8 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
             modifier = Modifier.fillMaxWidth().padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val selectedColor = paths.lastOrNull()?.second?.color
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -189,8 +200,14 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                             .background(color = color, shape = CircleShape)
                             .border(width = 0.8.dp, color = borderColor, shape = CircleShape)
                             .clickable {
-                                selectedColor = color
-                                pathPaint.color = color
+                                paths.add(
+                                    Path() to Paint().apply {
+                                        this.color = color
+                                        strokeWidth = 10f
+                                        style = PaintingStyle.Stroke
+                                        isAntiAlias = true
+                                    }
+                                )
                             }
                     )
                 }

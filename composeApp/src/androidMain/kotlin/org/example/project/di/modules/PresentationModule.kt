@@ -15,7 +15,7 @@ internal val presentationModule = module {
     }
 
     factory {
-        ImageViewScreenModel(get(), get())
+        ImageViewScreenModel(get(), get(), get())
     }
 
     single { ImageListFormatter(get()) }

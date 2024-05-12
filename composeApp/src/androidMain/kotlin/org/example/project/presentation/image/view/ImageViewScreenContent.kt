@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -103,6 +105,34 @@ internal fun ImageViewScreenContent(
                 is EditingState.TransformationSelected ->
                     editingState.transformation.Content()
             }
+
+            SmallFloatingActionButton(
+                modifier = Modifier
+                    .padding(end = 24.dp, bottom = 24.dp)
+                    .align(Alignment.BottomEnd),
+                onClick = {
+                    when (state.editingState) {
+                        EditingState.Initial -> Unit
+
+                        is EditingState.SavedBitmap ->
+                            onAction(
+                                ImageViewScreen.Action.Save(
+                                    state.editingState.bitmap.asAndroidBitmap()
+                                )
+                            )
+
+                        is EditingState.TransformationSelected ->
+                            onAction(
+                                ImageViewScreen.Action.Save(
+                                    state.editingState.transformation.save()
+                                )
+                            )
+                    }
+                },
+                content = {
+                    Text("Save")
+                }
+            )
         }
 
         AnimatedContent(
@@ -155,7 +185,13 @@ internal fun ImageViewScreenContent(
                 BottomBar(
                     modifier = Modifier.fillMaxWidth(),
                     transformations = state.transformations,
-                    onClick = { onAction(ImageViewScreen.Action.SelectTransformation(it)) }
+                    onTransformationClick = {
+                        onAction(
+                            ImageViewScreen.Action.SelectTransformation(
+                                it
+                            )
+                        )
+                    }
                 )
             }
         }
@@ -171,7 +207,7 @@ private fun AppBar(
         modifier = modifier
             .background(color = MaterialTheme.colorScheme.secondaryContainer)
             .padding(8.dp),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
         val navigator = LocalNavigator.currentOrThrow
@@ -202,7 +238,7 @@ private fun AppBar(
 private fun BottomBar(
     modifier: Modifier = Modifier,
     transformations: List<Transformation>,
-    onClick: (Transformation) -> Unit
+    onTransformationClick: (Transformation) -> Unit,
 ) {
     Row(
         modifier = modifier.padding(16.dp),
@@ -215,7 +251,7 @@ private fun BottomBar(
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .clickable { onClick(transformation) }
+                    .clickable { onTransformationClick(transformation) }
                     .border(
                         width = 1.dp,
                         color = MaterialTheme.colorScheme.onBackground,
