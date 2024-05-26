@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,17 +29,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
@@ -75,7 +79,46 @@ internal fun ImageViewScreenContent(
     ) {
         AppBar(
             modifier = Modifier.fillMaxWidth(),
-            imageName = state.image.name
+            imageName = state.image.name,
+            trailingButton = {
+                val alpha by animateFloatAsState(
+                    targetValue = if (state.editingState !is EditingState.TransformationSelected) {
+                        1f
+                    } else {
+                        0f
+                    },
+                    label = ""
+                )
+
+                IconButton(
+                    modifier = Modifier.alpha(alpha),
+                    content = {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        when (state.editingState) {
+                            EditingState.Initial -> Unit
+
+                            is EditingState.SavedBitmap ->
+                                onAction(
+                                    ImageViewScreen.Action.Save(
+                                        state.editingState.bitmap.asAndroidBitmap()
+                                    )
+                                )
+
+                            is EditingState.TransformationSelected ->
+                                onAction(
+                                    ImageViewScreen.Action.Save(
+                                        state.editingState.transformation.save()
+                                    )
+                                )
+                        }
+                    }
+                )
+            }
         )
 
         Box(
@@ -105,34 +148,6 @@ internal fun ImageViewScreenContent(
                 is EditingState.TransformationSelected ->
                     editingState.transformation.Content()
             }
-
-            SmallFloatingActionButton(
-                modifier = Modifier
-                    .padding(end = 24.dp, bottom = 24.dp)
-                    .align(Alignment.BottomEnd),
-                onClick = {
-                    when (state.editingState) {
-                        EditingState.Initial -> Unit
-
-                        is EditingState.SavedBitmap ->
-                            onAction(
-                                ImageViewScreen.Action.Save(
-                                    state.editingState.bitmap.asAndroidBitmap()
-                                )
-                            )
-
-                        is EditingState.TransformationSelected ->
-                            onAction(
-                                ImageViewScreen.Action.Save(
-                                    state.editingState.transformation.save()
-                                )
-                            )
-                    }
-                },
-                content = {
-                    Text("Save")
-                }
-            )
         }
 
         AnimatedContent(
@@ -158,7 +173,7 @@ internal fun ImageViewScreenContent(
                     ) {
                         Icon(
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(40.dp)
                                 .clickable {
 
                                 }
@@ -168,7 +183,7 @@ internal fun ImageViewScreenContent(
                         )
                         Icon(
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(40.dp)
                                 .clickable {
                                     onAction(
                                         ImageViewScreen.Action.UpdateBitmap(
@@ -201,7 +216,8 @@ internal fun ImageViewScreenContent(
 @Composable
 private fun AppBar(
     modifier: Modifier,
-    imageName: String
+    imageName: String,
+    trailingButton: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier
@@ -225,12 +241,15 @@ private fun AppBar(
         )
 
         Text(
+            modifier = Modifier.weight(1f),
             text = imageName,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
+
+        trailingButton()
     }
 }
 

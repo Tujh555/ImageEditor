@@ -83,7 +83,7 @@ android {
         implementation(libs.coil)
         implementation(libs.compose.material3)
         implementation(libs.androidx.activity.compose)
-        implementation(libs.androidx.crypto)
+        implementation(libs.compose.color.picker)
 
         debugImplementation(libs.compose.ui.tooling)
     }

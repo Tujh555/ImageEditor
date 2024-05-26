@@ -4,10 +4,19 @@ import android.graphics.Bitmap
 import android.graphics.Picture
 import android.net.Uri
 import android.os.Build
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +26,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +45,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isUnspecified
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
@@ -38,14 +54,22 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import org.example.project.R
 import org.example.project.editor.AndroidCanvas
 import org.example.project.editor.modifiers.gestures.MotionEvent
@@ -56,13 +80,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
     private var previousPosition by mutableStateOf(Offset.Unspecified)
     private var drawRect by mutableStateOf(Rect.Zero)
     private var motionEvent by mutableStateOf<MotionEvent>(MotionEvent.Unspecified)
-    private val colors = listOf(
-        Color.White,
-        Color.Black,
-        Color.Red,
-        Color.Green,
-        Color.Yellow,
-    )
+    private val colors = initialColors
     private var pictureCanvas by mutableStateOf<AndroidCanvas?>(null)
     private val paths = mutableStateListOf(
         Path() to Paint().apply {
@@ -72,8 +90,10 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
             isAntiAlias = true
         }
     )
-
+    private var dialogVisible by mutableStateOf(false)
+    private var customColor by mutableStateOf(Color.Unspecified)
     private val picture by mutableStateOf(Picture())
+    private var isCustomColorSelected by mutableStateOf(false)
     override val iconRes: Int = R.drawable.ic_brush
 
     override fun save(): Bitmap {
@@ -94,6 +114,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
+            ColorPicker()
             Box(
                 modifier = Modifier
                     .wrapContentSize()
@@ -173,6 +194,81 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
     }
 
     @Composable
+    private fun ColorPicker() {
+        val controller = rememberColorPickerController()
+
+        AnimatedVisibility(
+            visible = dialogVisible
+        ) {
+            Dialog(
+                onDismissRequest = {
+                    dialogVisible = false
+                },
+                content = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        var selectedColor by remember(customColor) {
+                            mutableStateOf(
+                                if (customColor.isUnspecified) {
+                                    Color.Red
+                                } else {
+                                    customColor
+                                }
+                            )
+                        }
+
+                        val screenHeight = LocalConfiguration.current.screenHeightDp
+                        val screenWidth = LocalConfiguration.current.screenWidthDp
+
+                        val colorPickerHeight = screenHeight * 0.5f
+                        val colorPickerWidth = screenWidth * 0.8f
+
+                        HsvColorPicker(
+                            modifier = Modifier
+                                .size(
+                                    width = colorPickerWidth.dp,
+                                    height = colorPickerHeight.dp
+                                ),
+                            controller = controller,
+                            initialColor = if (customColor.isUnspecified) {
+                                Color.Red
+                            } else {
+                                customColor
+                            },
+                            onColorChanged = { colorEnvelope ->
+                                if (colorEnvelope.fromUser) {
+                                    selectedColor = colorEnvelope.color
+                                }
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = selectedColor != Color.Unspecified
+                        ) {
+                            Button(
+                                content = {
+                                    Text("Select")
+                                },
+                                onClick = {
+                                    customColor = selectedColor
+                                    isCustomColorSelected = true
+                                    applyColor(customColor)
+                                    dialogVisible = false
+                                },
+                                colors = ButtonDefaults.buttonColors().copy(
+                                    containerColor = selectedColor
+                                ),
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
     override fun Controls() {
         Column(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -181,11 +277,67 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
             val selectedColor = paths.lastOrNull()?.second?.color
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                val customColorBorder by animateColorAsState(
+                    targetValue = if (isCustomColorSelected) {
+                        MaterialTheme.colorScheme.onBackground
+                    } else {
+                        Color.Transparent
+                    },
+                    label = "custom color"
+                )
+                val infiniteTransition = rememberInfiniteTransition("rotation")
+                val angle by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 360f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 7000, easing = LinearEasing)
+                    ),
+                    label = "angle"
+                )
+
+                val hapticFeedback = LocalHapticFeedback.current
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .border(width = 0.8.dp, color = customColorBorder, shape = CircleShape)
+                        .padding(2.dp)
+                        .drawWithContent {
+                            val brush = Brush.sweepGradient(
+                                colors = gradientColors,
+                                center = center
+                            )
+
+                            rotate(angle) {
+                                drawCircle(
+                                    brush = brush,
+                                    radius = size.width / 2f,
+                                    blendMode = BlendMode.SrcIn
+                                )
+                            }
+                        }
+                        .combinedClickable(
+                            onClick = {
+                                if (customColor.isUnspecified) {
+                                    dialogVisible = true
+                                } else {
+                                    isCustomColorSelected = true
+                                    applyColor(customColor)
+                                }
+                            },
+                            onLongClick = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                dialogVisible = true
+                            }
+                        )
+                )
+
                 colors.fastForEach { color ->
                     val borderColor by animateColorAsState(
-                        targetValue = if (selectedColor == color) {
+                        targetValue = if (selectedColor == color && isCustomColorSelected.not()) {
                             MaterialTheme.colorScheme.onBackground
                         } else {
                             Color.Transparent
@@ -195,23 +347,29 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
 
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(color = color, shape = CircleShape)
                             .border(width = 0.8.dp, color = borderColor, shape = CircleShape)
+                            .padding(2.dp)
+                            .background(color = color, shape = CircleShape)
                             .clickable {
-                                paths.add(
-                                    Path() to Paint().apply {
-                                        this.color = color
-                                        strokeWidth = 10f
-                                        style = PaintingStyle.Stroke
-                                        isAntiAlias = true
-                                    }
-                                )
+                                isCustomColorSelected = false
+                                applyColor(color)
                             }
                     )
                 }
             }
         }
+    }
+
+    private fun applyColor(color: Color) {
+        paths.add(
+            Path() to Paint().apply {
+                this.color = color
+                strokeWidth = 10f
+                style = PaintingStyle.Stroke
+                isAntiAlias = true
+            }
+        )
     }
 }

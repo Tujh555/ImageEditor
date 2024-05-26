@@ -112,7 +112,13 @@ internal fun ImageListScreenContent(
                     }
                 ) {
                     if (it) {
-                        CircularProgressIndicator()
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                            content = {
+                                CircularProgressIndicator()
+                            }
+                        )
                     } else {
                         ImageGrid(
                             modifier = Modifier
