@@ -1,21 +1,27 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.kotlin.compose.compiler)
 }
+
+val compilerArgs = listOf(
+    "-P",
+    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf",
+    "-Xcontext-receivers"
+)
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "11"
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
 
-                freeCompilerArgs += listOf(
-                    "-P",
-                    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf",
-                    "-Xcontext-receivers"
-                )
-            }
+            compilerArgs.forEach(freeCompilerArgs::add)
         }
     }
     
@@ -89,3 +95,9 @@ android {
     }
 }
 
+composeCompiler {
+    enableStrongSkippingMode = true
+    enableIntrinsicRemember = true
+    enableNonSkippingGroupOptimization = true
+    targetKotlinPlatforms = setOf(KotlinPlatformType.jvm)
+}
