@@ -1,15 +1,21 @@
 package org.example.project
 
 import android.app.Application
-import api.CommonApiHolder
-import api.PlatformDependencies
+import org.example.project.di.modules.commonModule
+import org.example.project.di.modules.compressorModule
+import org.example.project.di.modules.dataModule
+import org.example.project.di.modules.presentationModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
-class App : Application() {
+internal class App : Application() {
+
     override fun onCreate() {
         super.onCreate()
 
-        CommonApiHolder.init {
-            PlatformDependencies(applicationContext)
+        startKoin {
+            androidContext(applicationContext)
+            modules(commonModule, presentationModule, compressorModule, dataModule)
         }
     }
 }

@@ -9,6 +9,12 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
+
+                freeCompilerArgs += listOf(
+                    "-P",
+                    "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=compose_compiler_config.conf",
+                    "-Xcontext-receivers"
+                )
             }
         }
     }
@@ -18,6 +24,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.compose.runtime)
+            implementation(libs.compoe.animation)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -53,7 +61,8 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isDebuggable = false
         }
     }
     compileOptions {
@@ -62,7 +71,20 @@ android {
     }
     dependencies {
         implementation(libs.dateTime)
+        implementation(libs.compoe.animation)
+        implementation(libs.androidx.core.ktx)
+        implementation(libs.voyager.navigator)
+        implementation(libs.voyager.screen.model)
+        implementation(libs.voyager.transitions)
+        implementation(libs.voyager.koin)
+        implementation(platform(libs.koin.bom))
+        implementation(libs.koin.core)
+        implementation(libs.koin.android)
+        implementation(libs.coil)
+        implementation(libs.compose.material3)
+        implementation(libs.androidx.activity.compose)
+        implementation(libs.androidx.crypto)
+
         debugImplementation(libs.compose.ui.tooling)
     }
 }
-
