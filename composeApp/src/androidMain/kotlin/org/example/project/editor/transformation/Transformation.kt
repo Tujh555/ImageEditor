@@ -12,6 +12,10 @@ interface Transformation {
 
     fun save(): Bitmap
 
+    fun undo()
+
+    fun clear()
+
     @Composable
     fun Content()
 

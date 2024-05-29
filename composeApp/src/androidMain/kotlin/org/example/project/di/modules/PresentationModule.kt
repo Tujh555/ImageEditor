@@ -10,7 +10,8 @@ internal val presentationModule = module {
         ImageListScreenModel(
             repository = get(),
             formatter = get(),
-            compressImage = get()
+            compressImage = get(),
+            context = get()
         )
     }
 

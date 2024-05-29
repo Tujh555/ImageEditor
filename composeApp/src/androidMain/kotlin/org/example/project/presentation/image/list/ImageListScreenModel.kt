@@ -1,15 +1,19 @@
 package org.example.project.presentation.image.list
 
-import android.content.SharedPreferences
+import android.content.Context
 import android.net.Uri
+import android.widget.Toast
+import implementation.domain.models.Resource
 import implementation.domain.models.onError
 import implementation.domain.models.onSuccess
 import implementation.domain.repository.ImageRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.example.project.domain.uc.CompressImage
 import org.example.project.presentation.base.BaseScreenModel
 import org.example.project.presentation.mapper.ImageListFormatter
@@ -17,7 +21,8 @@ import org.example.project.presentation.mapper.ImageListFormatter
 internal class ImageListScreenModel(
     private val repository: ImageRepository,
     private val formatter: ImageListFormatter,
-    private val compressImage: CompressImage
+    private val compressImage: CompressImage,
+    private val context: Context
 ) : BaseScreenModel<ImageListScreen.Action, ImageListScreen.State>(
     initialState = ImageListScreen.State()
 ) {
@@ -33,13 +38,16 @@ internal class ImageListScreenModel(
 
     private fun save(uri: Uri) {
         ioScope.launch {
-            compressImage(uri)
-                .onSuccess {
-                    // TODO snack
-                }
-                .onError {
-                    // TODO
-                }
+            val toastText = when (compressImage(uri)) {
+                is Resource.Failure -> "Ошибка"
+                is Resource.Success -> "Сохранено"
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast
+                    .makeText(context, toastText, Toast.LENGTH_SHORT)
+                    .show()
+            }
         }
     }
 

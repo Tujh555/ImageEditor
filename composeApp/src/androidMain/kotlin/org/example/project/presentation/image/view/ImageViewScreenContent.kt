@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +57,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import org.example.project.R
 import org.example.project.editor.transformation.Transformation
 
 private val floatSpec = spring<Float>(
@@ -82,7 +84,7 @@ internal fun ImageViewScreenContent(
             imageName = state.image.name,
             trailingButton = {
                 val alpha by animateFloatAsState(
-                    targetValue = if (state.editingState !is EditingState.TransformationSelected) {
+                    targetValue = if (state.editingState is EditingState.SavedBitmap) {
                         1f
                     } else {
                         0f
@@ -94,6 +96,23 @@ internal fun ImageViewScreenContent(
                     modifier = Modifier.alpha(alpha),
                     content = {
                         Icon(
+                            modifier = Modifier.size(32.dp),
+                            painter = painterResource(R.drawable.ic_undo),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        if (state.editingState is EditingState.SavedBitmap) {
+                            onAction(ImageViewScreen.Action.Undo)
+                        }
+                    }
+                )
+
+                IconButton(
+                    modifier = Modifier.alpha(alpha),
+                    content = {
+                        Icon(
+                            modifier = Modifier.size(32.dp),
                             imageVector = Icons.Filled.Check,
                             contentDescription = null
                         )
@@ -161,39 +180,56 @@ internal fun ImageViewScreenContent(
                     animationSpec = intOffsetSpec,
                     towards = AnimatedContentTransitionScope.SlideDirection.Down,
                 ) + fadeOut(floatSpec)
-            }
+            },
+            contentKey = { it.javaClass }
         ) { editingState ->
             if (editingState is EditingState.TransformationSelected) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    editingState.transformation.Controls()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clickable {
-
-                                }
-                                .rotate(135f),
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = null
-                        )
-                        Icon(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clickable {
-                                    onAction(
-                                        ImageViewScreen.Action.UpdateBitmap(
-                                            bitmap = editingState.transformation.save()
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+                        editingState.transformation.Controls()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable {
+                                        onAction(ImageViewScreen.Action.CloseEditing)
+                                    }
+                                    .rotate(135f),
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Icon(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable {
+                                        onAction(ImageViewScreen.Action.UndoOperation)
+                                    },
+                                painter = painterResource(R.drawable.ic_undo),
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Icon(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable {
+                                        onAction(
+                                            ImageViewScreen.Action.UpdateBitmap(
+                                                bitmap = editingState.transformation.save()
+                                            )
                                         )
-                                    )
-                                },
-                            imageVector = Icons.Outlined.Check,
-                            contentDescription = null
-                        )
+                                    },
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
             } else {

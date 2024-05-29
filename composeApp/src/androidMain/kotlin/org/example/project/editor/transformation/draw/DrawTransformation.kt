@@ -20,11 +20,13 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -95,6 +99,27 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
     private val picture by mutableStateOf(Picture())
     private var isCustomColorSelected by mutableStateOf(false)
     override val iconRes: Int = R.drawable.ic_brush
+
+    override fun clear() {
+        paths.clear()
+        paths.add(
+            Path() to Paint().apply {
+                color = Color.Red
+                strokeWidth = 10f
+                style = PaintingStyle.Stroke
+                isAntiAlias = true
+            }
+        )
+    }
+
+    override fun undo() {
+        if (paths.size == 1) {
+            paths.last().first.reset()
+            return
+        }
+
+        paths.removeLast()
+    }
 
     override fun save(): Bitmap {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -248,7 +273,10 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                         ) {
                             Button(
                                 content = {
-                                    Text("Select")
+                                    Text(
+                                        text = "Выбрать",
+                                        color = selectedColor.getContrast().value
+                                    )
                                 },
                                 onClick = {
                                     customColor = selectedColor
@@ -271,7 +299,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
     @Composable
     override fun Controls() {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            modifier = Modifier.width(IntrinsicSize.Max).padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val selectedColor = paths.lastOrNull()?.second?.color
@@ -305,7 +333,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                         .clip(CircleShape)
                         .border(width = 0.8.dp, color = customColorBorder, shape = CircleShape)
                         .padding(2.dp)
-                        .drawWithContent {
+                        .drawBehind {
                             val brush = Brush.sweepGradient(
                                 colors = gradientColors,
                                 center = center
@@ -370,6 +398,17 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                 style = PaintingStyle.Stroke
                 isAntiAlias = true
             }
+        )
+    }
+
+    @Composable
+    private fun Color.getContrast(): State<Color> {
+        val luminance = 0.2126f * red + 0.7152f * green + 0.0722f * blue
+
+        return animateColorAsState(
+            targetValue = if (luminance > 0.5f) Color.Black else Color.White,
+            label = "",
+            animationSpec = remember { tween(400) }
         )
     }
 }
