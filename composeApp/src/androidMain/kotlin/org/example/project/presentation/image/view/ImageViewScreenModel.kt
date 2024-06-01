@@ -1,8 +1,7 @@
 package org.example.project.presentation.image.view
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.util.Log
+import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -13,149 +12,118 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.example.project.domain.compressor.CompressFormat
 import org.example.project.domain.uc.SaveBitmap
-import org.example.project.editor.transformation.Transformation
-import org.example.project.editor.transformation.draw.DrawTransformation
+import org.example.project.editor.transformation.TransformationFactory
 import org.example.project.presentation.base.BaseScreenModel
 import org.example.project.presentation.models.ImageUiModel
-import java.util.LinkedList
+import org.example.project.utils.BitmapStorage
 
 internal class ImageViewScreenModel(
     image: ImageUiModel,
     private val saveBitmap: SaveBitmap,
-    private val context: Context
-) : BaseScreenModel<ImageViewScreen.Action, ImageViewScreen.State>(
+    private val context: Context,
+    private val bitmapStorage: BitmapStorage
+) : BaseScreenModel<ImageViewScreen.Action, ImageViewScreen.State, ImageViewScreen.Event>(
     initialState = ImageViewScreen.State(
-        image = image,
+        imageName = image.name,
+        bitmap = BitmapFactory
+            .decodeFile(image.path.path)
+            .asImageBitmap()
     )
 ) {
-    private val previousStates = LinkedList<Bitmap>()
-    private var previousState: EditingState? = null
-
-    init {
-        _state.update {
-            it.copy(
-                transformations = listOf(DrawTransformation(image.path))
-            )
-        }
-    }
+    private val currentBitmap
+        get() = state.value.bitmap
 
     override fun onAction(action: ImageViewScreen.Action) {
         when (action) {
-            is ImageViewScreen.Action.Save ->
-                saveBitmap(action.bitmap)
+            is ImageViewScreen.Action.SaveToStorage ->
+                saveBitmap()
 
-            is ImageViewScreen.Action.UpdateBitmap ->
-                updateBitmap(action.bitmap)
+            is ImageViewScreen.Action.SaveTransformationResult ->
+                updateBitmap(action.bitmap.asImageBitmap())
 
             is ImageViewScreen.Action.SelectTransformation ->
-                selectTransformation(action.transformation)
+                selectTransformation(action.transformationFactory)
 
             ImageViewScreen.Action.Undo ->
-                undoOperation()
+                undo()
 
-            ImageViewScreen.Action.CloseEditing -> closeEditing()
-
-            ImageViewScreen.Action.UndoOperation -> undo()
+            ImageViewScreen.Action.CloseEditing ->
+                closeEditing()
         }
     }
 
     private fun closeEditing() {
-        val editingState = state.value.editingState as? EditingState.TransformationSelected ?: return
-        editingState.transformation.clear()
-
         _state.update {
             it.copy(
-                editingState = previousState ?: EditingState.Initial
+                selectedTransformation = null
             )
         }
-    }
-
-    private fun updateState(newState: (ImageViewScreen.State) -> ImageViewScreen.State) {
-        previousState = state.value.editingState
-
-        _state.update(newState)
     }
 
     private fun undo() {
-        val editingState = state.value.editingState as? EditingState.TransformationSelected ?: return
-        editingState.transformation.undo()
-    }
+        val selectedTransformation = state.value.selectedTransformation
 
-    private fun selectTransformation(transformation: Transformation) {
-        updateState {
+        if (selectedTransformation != null) {
+            selectedTransformation.undo()
+            return
+        }
+
+        val previousImage = bitmapStorage.pop()?.asImageBitmap()
+
+        if (previousImage != null) {
+            _state.update {
+                it.copy(
+                    bitmap = previousImage
+                )
+            }
+        }
+
+        val haveCache = bitmapStorage.cacheSize > 0
+        _state.update {
             it.copy(
-                editingState = EditingState.TransformationSelected(transformation)
+                haveStory = haveCache
             )
         }
     }
 
-    private fun saveBitmap(bitmap: Bitmap) {
+    private fun selectTransformation(factory: TransformationFactory) {
+        val selectedTransformation = factory.createWithBitmap(currentBitmap)
+
+        _state.update {
+            it.copy(
+                selectedTransformation = selectedTransformation
+            )
+        }
+    }
+
+    private fun updateBitmap(newBitmap: ImageBitmap) {
+        bitmapStorage.put(currentBitmap.asAndroidBitmap())
+
+        _state.update {
+            it.copy(
+                bitmap = newBitmap,
+                haveStory = bitmapStorage.cacheSize > 0
+            )
+        }
+
+        closeEditing()
+    }
+
+    private fun saveBitmap() {
         ioScope.launch {
-            saveBitmap(bitmap, CompressFormat.Jpeg())
+            saveBitmap(currentBitmap.asAndroidBitmap(), CompressFormat.Jpeg())
 
             withContext(Dispatchers.Main) {
                 Toast
                     .makeText(context, "Фото сохранено", Toast.LENGTH_SHORT)
                     .show()
             }
+
+            _event.send(ImageViewScreen.Event.CloseScreen())
         }
     }
 
-    private fun updateBitmap(bitmap: Bitmap) {
-
-        previousState?.let {
-            if (it is EditingState.SavedBitmap) {
-                savePrevious(it.bitmap)
-            }
-        }
-
-        updateState {
-            it.copy(
-                editingState = EditingState.SavedBitmap(bitmap.asImageBitmap())
-            )
-        }
-    }
-
-    private fun savePrevious(bitmap: ImageBitmap) {
-        with(previousStates) {
-            if (size > UNDO_LIMIT) {
-                removeFirst().recycle()
-            }
-
-            addLast(bitmap.asAndroidBitmap())
-        }
-    }
-
-    private fun undoOperation() {
-        val currentState = state.value.editingState
-
-        if (currentState !is EditingState.SavedBitmap) return
-
-        previousState?.let {
-            if (it is EditingState.TransformationSelected) {
-                it.transformation.undo()
-            }
-        }
-
-        with(previousStates) {
-            if (size == 0) {
-                _state.update { it.copy(editingState = EditingState.Initial) }
-                return
-            }
-
-            val currentBitmap = currentState.bitmap.asAndroidBitmap()
-            val lastBitmap = removeLast()
-            _state.update {
-                it.copy(
-                    editingState = EditingState.SavedBitmap(lastBitmap.asImageBitmap())
-                )
-            }
-
-            currentBitmap.recycle()
-        }
-    }
-
-    companion object {
-        private const val UNDO_LIMIT = 10
+    override fun onDispose() {
+        bitmapStorage.clear()
     }
 }

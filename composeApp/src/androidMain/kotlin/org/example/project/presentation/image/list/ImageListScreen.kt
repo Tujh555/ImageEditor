@@ -8,7 +8,7 @@ import org.example.project.presentation.base.BaseScreen
 import org.example.project.presentation.models.ImageUiModel
 
 internal class ImageListScreen :
-    BaseScreen<ImageListScreen.Action, ImageListScreen.State, ImageListScreenModel>() {
+    BaseScreen<ImageListScreen.Action, ImageListScreen.State, Nothing, ImageListScreenModel>() {
 
     @Immutable
     data class State(
@@ -25,6 +25,9 @@ internal class ImageListScreen :
     override fun Content(state: State, onAction: (Action) -> Unit) {
         ImageListScreenContent(state, onAction)
     }
+
+    @Composable
+    override fun Event(event: Nothing) = Unit
 
     @Composable
     override fun getModel(): ImageListScreenModel {

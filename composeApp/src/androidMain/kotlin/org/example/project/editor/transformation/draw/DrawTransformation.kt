@@ -2,7 +2,6 @@ package org.example.project.editor.transformation.draw
 
 import android.graphics.Bitmap
 import android.graphics.Picture
-import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -12,6 +11,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,6 +52,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
@@ -65,22 +65,18 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
-import org.example.project.R
 import org.example.project.editor.AndroidCanvas
 import org.example.project.editor.modifiers.gestures.MotionEvent
 import org.example.project.editor.modifiers.gestures.onOneTouchEvents
 import org.example.project.editor.transformation.Transformation
 
-class DrawTransformation(private val imagePath: Uri) : Transformation {
+class DrawTransformation(private val startBitmap: ImageBitmap) : Transformation {
     private var previousPosition by mutableStateOf(Offset.Unspecified)
     private var drawRect by mutableStateOf(Rect.Zero)
     private var motionEvent by mutableStateOf<MotionEvent>(MotionEvent.Unspecified)
@@ -98,7 +94,6 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
     private var customColor by mutableStateOf(Color.Unspecified)
     private val picture by mutableStateOf(Picture())
     private var isCustomColorSelected by mutableStateOf(false)
-    override val iconRes: Int = R.drawable.ic_brush
 
     override fun clear() {
         paths.clear()
@@ -200,7 +195,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                     },
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
+                Image(
                     modifier = Modifier
                         .onGloballyPositioned { layoutCoordinates ->
                             val bounds = layoutCoordinates.boundsInParent()
@@ -208,10 +203,7 @@ class DrawTransformation(private val imagePath: Uri) : Transformation {
                                 drawRect = bounds
                             }
                         },
-                    model = ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(imagePath)
-                        .build(),
+                    bitmap = startBitmap,
                     contentDescription = null
                 )
             }

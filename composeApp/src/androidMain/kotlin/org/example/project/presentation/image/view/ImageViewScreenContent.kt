@@ -46,8 +46,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -55,10 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import org.example.project.R
-import org.example.project.editor.transformation.Transformation
+import org.example.project.editor.transformation.TransformationFactory
 
 private val floatSpec = spring<Float>(
     stiffness = Spring.StiffnessLow,
@@ -81,10 +77,13 @@ internal fun ImageViewScreenContent(
     ) {
         AppBar(
             modifier = Modifier.fillMaxWidth(),
-            imageName = state.image.name,
+            imageName = state.imageName,
             trailingButton = {
+                val controlButtonsVisible = state.run {
+                    selectedTransformation == null && haveStory
+                }
                 val alpha by animateFloatAsState(
-                    targetValue = if (state.editingState is EditingState.SavedBitmap) {
+                    targetValue = if (controlButtonsVisible) {
                         1f
                     } else {
                         0f
@@ -102,9 +101,7 @@ internal fun ImageViewScreenContent(
                         )
                     },
                     onClick = {
-                        if (state.editingState is EditingState.SavedBitmap) {
-                            onAction(ImageViewScreen.Action.Undo)
-                        }
+                        onAction(ImageViewScreen.Action.Undo)
                     }
                 )
 
@@ -118,23 +115,7 @@ internal fun ImageViewScreenContent(
                         )
                     },
                     onClick = {
-                        when (state.editingState) {
-                            EditingState.Initial -> Unit
-
-                            is EditingState.SavedBitmap ->
-                                onAction(
-                                    ImageViewScreen.Action.Save(
-                                        state.editingState.bitmap.asAndroidBitmap()
-                                    )
-                                )
-
-                            is EditingState.TransformationSelected ->
-                                onAction(
-                                    ImageViewScreen.Action.Save(
-                                        state.editingState.transformation.save()
-                                    )
-                                )
-                        }
+                        onAction(ImageViewScreen.Action.SaveToStorage)
                     }
                 )
             }
@@ -146,31 +127,19 @@ internal fun ImageViewScreenContent(
                 .padding(vertical = 4.dp, horizontal = 8.dp)
                 .animateContentSize()
         ) {
-            when (val editingState = state.editingState) {
-                EditingState.Initial ->
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest
-                            .Builder(LocalContext.current)
-                            .data(state.image.path)
-                            .build(),
-                        contentDescription = null
-                    )
-
-                is EditingState.SavedBitmap ->
-                    Image(
-                        modifier = Modifier.fillMaxSize(),
-                        bitmap = editingState.bitmap,
-                        contentDescription = null
-                    )
-
-                is EditingState.TransformationSelected ->
-                    editingState.transformation.Content()
+            if (state.selectedTransformation != null) {
+                state.selectedTransformation.Content()
+            } else {
+                Image(
+                    modifier = Modifier.fillMaxSize(),
+                    bitmap = state.bitmap,
+                    contentDescription = null
+                )
             }
         }
 
         AnimatedContent(
-            targetState = state.editingState,
+            targetState = state.selectedTransformation,
             label = "",
             transitionSpec = {
                 slideIntoContainer(
@@ -181,53 +150,65 @@ internal fun ImageViewScreenContent(
                     towards = AnimatedContentTransitionScope.SlideDirection.Down,
                 ) + fadeOut(floatSpec)
             },
-            contentKey = { it.javaClass }
-        ) { editingState ->
-            if (editingState is EditingState.TransformationSelected) {
+        ) { selectedTransformation ->
+            if (selectedTransformation != null) {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-                        editingState.transformation.Controls()
+                        selectedTransformation.Controls()
+
                         Spacer(modifier = Modifier.height(16.dp))
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            Icon(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        onAction(ImageViewScreen.Action.CloseEditing)
-                                    }
-                                    .rotate(135f),
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp).rotate(135f),
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onAction(ImageViewScreen.Action.CloseEditing)
+                                }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Icon(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        onAction(ImageViewScreen.Action.UndoOperation)
-                                    },
-                                painter = painterResource(R.drawable.ic_undo),
-                                contentDescription = null
+
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp),
+                                        painter = painterResource(R.drawable.ic_undo),
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onAction(ImageViewScreen.Action.Undo)
+                                }
                             )
+
                             Spacer(modifier = Modifier.width(16.dp))
-                            Icon(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        onAction(
-                                            ImageViewScreen.Action.UpdateBitmap(
-                                                bitmap = editingState.transformation.save()
-                                            )
+
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp),
+                                        imageVector = Icons.Outlined.Check,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onAction(
+                                        ImageViewScreen.Action.SaveTransformationResult(
+                                            bitmap = selectedTransformation.save()
                                         )
-                                    },
-                                imageVector = Icons.Outlined.Check,
-                                contentDescription = null
+                                    )
+                                }
                             )
                         }
                     }
@@ -235,12 +216,10 @@ internal fun ImageViewScreenContent(
             } else {
                 BottomBar(
                     modifier = Modifier.fillMaxWidth(),
-                    transformations = state.transformations,
+                    transformations = state.transformationFactories,
                     onTransformationClick = {
                         onAction(
-                            ImageViewScreen.Action.SelectTransformation(
-                                it
-                            )
+                            ImageViewScreen.Action.SelectTransformation(it)
                         )
                     }
                 )
@@ -292,8 +271,8 @@ private fun AppBar(
 @Composable
 private fun BottomBar(
     modifier: Modifier = Modifier,
-    transformations: List<Transformation>,
-    onTransformationClick: (Transformation) -> Unit,
+    transformations: List<TransformationFactory>,
+    onTransformationClick: (TransformationFactory) -> Unit,
 ) {
     Row(
         modifier = modifier.padding(16.dp),

@@ -4,8 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import implementation.domain.models.Resource
-import implementation.domain.models.onError
-import implementation.domain.models.onSuccess
 import implementation.domain.repository.ImageRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -23,7 +21,7 @@ internal class ImageListScreenModel(
     private val formatter: ImageListFormatter,
     private val compressImage: CompressImage,
     private val context: Context
-) : BaseScreenModel<ImageListScreen.Action, ImageListScreen.State>(
+) : BaseScreenModel<ImageListScreen.Action, ImageListScreen.State, Nothing>(
     initialState = ImageListScreen.State()
 ) {
     init {
