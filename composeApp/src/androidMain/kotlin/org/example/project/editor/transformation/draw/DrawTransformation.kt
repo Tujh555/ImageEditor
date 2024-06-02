@@ -84,7 +84,7 @@ class DrawTransformation(private val startBitmap: ImageBitmap) : Transformation 
     private var pictureCanvas by mutableStateOf<AndroidCanvas?>(null)
     private val paths = mutableStateListOf(
         Path() to Paint().apply {
-            color = Color.Red
+            color = initialColors.first()
             strokeWidth = 10f
             style = PaintingStyle.Stroke
             isAntiAlias = true
@@ -99,7 +99,7 @@ class DrawTransformation(private val startBitmap: ImageBitmap) : Transformation 
         paths.clear()
         paths.add(
             Path() to Paint().apply {
-                color = Color.Red
+                color = initialColors.first()
                 strokeWidth = 10f
                 style = PaintingStyle.Stroke
                 isAntiAlias = true

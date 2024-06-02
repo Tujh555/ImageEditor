@@ -10,6 +10,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.example.project.editor.transformation.Transformation
 import org.example.project.editor.transformation.TransformationFactory
+import org.example.project.editor.transformation.crop.CropTransformation
+import org.example.project.editor.transformation.crop.CropTransformationFactory
 import org.example.project.editor.transformation.draw.DrawTransformationFactory
 import org.example.project.presentation.base.BaseScreen
 import org.example.project.presentation.models.ImageUiModel
@@ -25,7 +27,8 @@ internal class ImageViewScreen(
         val imageName: String,
         val bitmap: ImageBitmap,
         val transformationFactories: List<TransformationFactory> = listOf(
-            DrawTransformationFactory()
+            DrawTransformationFactory(),
+            CropTransformationFactory()
         ),
         val selectedTransformation: Transformation? = null,
         val haveStory: Boolean = false
