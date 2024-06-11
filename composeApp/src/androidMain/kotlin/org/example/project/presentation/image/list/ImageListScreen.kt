@@ -19,6 +19,8 @@ internal class ImageListScreen :
     @Immutable
     sealed interface Action {
         data class SaveImage(val uri: Uri) : Action
+
+        data class DeleteImage(val image: ImageUiModel) : Action
     }
 
     @Composable

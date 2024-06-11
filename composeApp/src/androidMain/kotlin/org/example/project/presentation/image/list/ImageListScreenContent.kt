@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntOffsetAsState
@@ -12,28 +13,37 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -41,6 +51,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -63,6 +74,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.window.Dialog
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -86,6 +98,10 @@ internal fun ImageListScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        var dialogImage by remember {
+            mutableStateOf<ImageUiModel?>(null)
+        }
+
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -125,6 +141,9 @@ internal fun ImageListScreenContent(
                                 .fillMaxSize()
                                 .padding(8.dp),
                             imagesMap = state.imagesDateMap,
+                            onLongClick = { image ->
+                                dialogImage = image
+                            }
                         )
                     }
                 }
@@ -139,6 +158,75 @@ internal fun ImageListScreenContent(
                 onAction(ImageListScreen.Action.SaveImage(it))
             }
         )
+
+        val animationSpec = remember {
+            spring<Float>(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        }
+
+        val dismissDialog = { dialogImage = null }
+
+        AnimatedVisibility(
+            modifier = Modifier.align(Alignment.Center),
+            visible = dialogImage != null,
+            enter = remember {
+                fadeIn(animationSpec) + scaleIn(animationSpec)
+            },
+            exit = remember {
+                fadeOut(animationSpec) + scaleOut(animationSpec)
+            }
+        ) {
+            dialogImage?.let { image ->
+                Dialog(
+                    onDismissRequest = dismissDialog,
+                    content = {
+                        val shape = remember { RoundedCornerShape(16.dp) }
+                        Card(shape = shape) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest
+                                        .Builder(LocalContext.current)
+                                        .data(image.path)
+                                        .error(R.drawable.content)
+                                        .build(),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .aspectRatio(1f)
+                                        .size(56.dp)
+                                        .clip(shape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.width(IntrinsicSize.Max),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TextButton(
+                                        onClick = dismissDialog,
+                                    ) {
+                                        Text("Отмена")
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            onAction(
+                                                ImageListScreen.Action.DeleteImage(image)
+                                            )
+                                            dismissDialog()
+                                        },
+                                    ) {
+                                        Text("Удалить")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -147,6 +235,7 @@ internal fun ImageListScreenContent(
 private fun ImageGrid(
     modifier: Modifier = Modifier,
     imagesMap: Map<String, List<ImageUiModel>>,
+    onLongClick: (ImageUiModel) -> Unit
 ) {
     LazyColumn(
         modifier = modifier,
@@ -181,7 +270,8 @@ private fun ImageGrid(
                     images.fastForEach { image ->
                         ImageCell(
                             modifier = Modifier.animateItemPlacement(),
-                            image = image
+                            image = image,
+                            onLongClick = onLongClick
                         )
                     }
                 }
@@ -190,10 +280,12 @@ private fun ImageGrid(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ImageCell(
     modifier: Modifier = Modifier,
     image: ImageUiModel,
+    onLongClick: (ImageUiModel) -> Unit
 ) {
     val shape = remember {
         RoundedCornerShape(8.dp)
@@ -209,9 +301,14 @@ private fun ImageCell(
         modifier = modifier
             .size(cellSize)
             .clip(shape)
-            .clickable {
-                navigator.push(ImageViewScreen(image))
-            }
+            .combinedClickable(
+                onClick = {
+                    navigator.push(ImageViewScreen(image))
+                },
+                onLongClick = {
+                    onLongClick(image)
+                }
+            )
     ) {
         AsyncImage(
             model = ImageRequest

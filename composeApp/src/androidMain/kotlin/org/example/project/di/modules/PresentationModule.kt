@@ -1,5 +1,6 @@
 package org.example.project.di.modules
 
+import org.example.project.domain.uc.DeleteImage
 import org.example.project.presentation.image.list.ImageListScreenModel
 import org.example.project.utils.BitmapStorage
 import org.example.project.presentation.image.view.ImageViewScreenModel
@@ -12,7 +13,8 @@ internal val presentationModule = module {
             repository = get(),
             formatter = get(),
             compressImage = get(),
-            context = get()
+            context = get(),
+            deleteImage = get()
         )
     }
 
@@ -23,4 +25,6 @@ internal val presentationModule = module {
     }
 
     single { ImageListFormatter(get()) }
+
+    factory { DeleteImage(get(), get()) }
 }
