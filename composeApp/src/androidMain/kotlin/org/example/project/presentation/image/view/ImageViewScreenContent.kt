@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +17,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,22 +30,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -50,9 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import org.example.project.editor.transformation.Transformation
+import org.example.project.R
+import org.example.project.editor.transformation.TransformationFactory
 
 private val floatSpec = spring<Float>(
     stiffness = Spring.StiffnessLow,
@@ -75,7 +77,48 @@ internal fun ImageViewScreenContent(
     ) {
         AppBar(
             modifier = Modifier.fillMaxWidth(),
-            imageName = state.image.name
+            imageName = state.imageName,
+            trailingButton = {
+                val controlButtonsVisible = state.run {
+                    selectedTransformation == null && haveStory
+                }
+                val alpha by animateFloatAsState(
+                    targetValue = if (controlButtonsVisible) {
+                        1f
+                    } else {
+                        0f
+                    },
+                    label = ""
+                )
+
+                IconButton(
+                    modifier = Modifier.alpha(alpha),
+                    content = {
+                        Icon(
+                            modifier = Modifier.size(32.dp),
+                            painter = painterResource(R.drawable.ic_undo),
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        onAction(ImageViewScreen.Action.Undo)
+                    }
+                )
+
+                IconButton(
+                    modifier = Modifier.alpha(alpha),
+                    content = {
+                        Icon(
+                            modifier = Modifier.size(32.dp),
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        onAction(ImageViewScreen.Action.SaveToStorage)
+                    }
+                )
+            }
         )
 
         Box(
@@ -84,59 +127,19 @@ internal fun ImageViewScreenContent(
                 .padding(vertical = 4.dp, horizontal = 8.dp)
                 .animateContentSize()
         ) {
-            when (val editingState = state.editingState) {
-                EditingState.Initial ->
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = ImageRequest
-                            .Builder(LocalContext.current)
-                            .data(state.image.path)
-                            .build(),
-                        contentDescription = null
-                    )
-
-                is EditingState.SavedBitmap ->
-                    Image(
-                        modifier = Modifier.fillMaxSize(),
-                        bitmap = editingState.bitmap,
-                        contentDescription = null
-                    )
-
-                is EditingState.TransformationSelected ->
-                    editingState.transformation.Content()
+            if (state.selectedTransformation != null) {
+                state.selectedTransformation.Content()
+            } else {
+                Image(
+                    modifier = Modifier.fillMaxSize(),
+                    bitmap = state.bitmap,
+                    contentDescription = null
+                )
             }
-
-            SmallFloatingActionButton(
-                modifier = Modifier
-                    .padding(end = 24.dp, bottom = 24.dp)
-                    .align(Alignment.BottomEnd),
-                onClick = {
-                    when (state.editingState) {
-                        EditingState.Initial -> Unit
-
-                        is EditingState.SavedBitmap ->
-                            onAction(
-                                ImageViewScreen.Action.Save(
-                                    state.editingState.bitmap.asAndroidBitmap()
-                                )
-                            )
-
-                        is EditingState.TransformationSelected ->
-                            onAction(
-                                ImageViewScreen.Action.Save(
-                                    state.editingState.transformation.save()
-                                )
-                            )
-                    }
-                },
-                content = {
-                    Text("Save")
-                }
-            )
         }
 
         AnimatedContent(
-            targetState = state.editingState,
+            targetState = state.selectedTransformation,
             label = "",
             transitionSpec = {
                 slideIntoContainer(
@@ -146,50 +149,77 @@ internal fun ImageViewScreenContent(
                     animationSpec = intOffsetSpec,
                     towards = AnimatedContentTransitionScope.SlideDirection.Down,
                 ) + fadeOut(floatSpec)
-            }
-        ) { editingState ->
-            if (editingState is EditingState.TransformationSelected) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    editingState.transformation.Controls()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clickable {
+            },
+        ) { selectedTransformation ->
+            if (selectedTransformation != null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+                        selectedTransformation.Controls()
 
-                                }
-                                .rotate(135f),
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = null
-                        )
-                        Icon(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clickable {
-                                    onAction(
-                                        ImageViewScreen.Action.UpdateBitmap(
-                                            bitmap = editingState.transformation.save()
-                                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp).rotate(135f),
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = null
                                     )
                                 },
-                            imageVector = Icons.Outlined.Check,
-                            contentDescription = null
-                        )
+                                onClick = {
+                                    onAction(ImageViewScreen.Action.CloseEditing)
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp),
+                                        painter = painterResource(R.drawable.ic_undo),
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onAction(ImageViewScreen.Action.Undo)
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(32.dp),
+                                        imageVector = Icons.Outlined.Check,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    onAction(
+                                        ImageViewScreen.Action.SaveTransformationResult(
+                                            bitmap = selectedTransformation.save()
+                                        )
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             } else {
                 BottomBar(
                     modifier = Modifier.fillMaxWidth(),
-                    transformations = state.transformations,
+                    transformations = state.transformationFactories,
                     onTransformationClick = {
                         onAction(
-                            ImageViewScreen.Action.SelectTransformation(
-                                it
-                            )
+                            ImageViewScreen.Action.SelectTransformation(it)
                         )
                     }
                 )
@@ -201,7 +231,8 @@ internal fun ImageViewScreenContent(
 @Composable
 private fun AppBar(
     modifier: Modifier,
-    imageName: String
+    imageName: String,
+    trailingButton: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier
@@ -225,20 +256,23 @@ private fun AppBar(
         )
 
         Text(
+            modifier = Modifier.weight(1f),
             text = imageName,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
+
+        trailingButton()
     }
 }
 
 @Composable
 private fun BottomBar(
     modifier: Modifier = Modifier,
-    transformations: List<Transformation>,
-    onTransformationClick: (Transformation) -> Unit,
+    transformations: List<TransformationFactory>,
+    onTransformationClick: (TransformationFactory) -> Unit,
 ) {
     Row(
         modifier = modifier.padding(16.dp),

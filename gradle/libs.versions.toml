@@ -16,7 +16,7 @@ voyager-version = "1.0.0"
 koin-version = "3.5.3"
 coil-version = "2.6.0"
 material-version = "1.2.1"
-crypto-version = "1.0.0"
+color-picker = "1.0.8"
 
 [libraries]
 sqldelight-runtime = { module = "com.squareup.sqldelight:runtime", version.ref = "sqldelight" }
@@ -31,9 +31,8 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compoe-animation = { module = "androidx.compose.animation:animation", version.ref = "compose" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material-version" }
-androidx-crypto = { module = "androidx.security:security-crypto", version.ref = "crypto-version" }
-
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
+compose-color-picker = { module = "com.github.skydoves:colorpicker-compose", version.ref = "color-picker" }
 
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager-version" }
 voyager-screen-model = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager-version" }
