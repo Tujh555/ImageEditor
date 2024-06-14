@@ -1,0 +1,24 @@
+{
+  "originHash" : "1f623a91d62ee55442cca42b3b82b89e7cfbc859b96df521a933a4ff1b5c6ca3",
+  "pins" : [
+    {
+      "identity" : "alloy",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/s1ddok/Alloy.git",
+      "state" : {
+        "revision" : "d0d3172e946bfabaf01883d4f84cb804c5d43fd6",
+        "version" : "0.18.2"
+      }
+    },
+    {
+      "identity" : "lottie-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/lottie-ios",
+      "state" : {
+        "revision" : "769b88d83a42ca8d5572b020c96f47e3690b3796",
+        "version" : "4.4.3"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -16,7 +16,7 @@ struct ContentView: View {
                     Image(systemName: "swift")
                         .font(.system(size: 200))
                         .foregroundColor(.accentColor)
-                    Text("SwiftUI: \(Greeting().greet())")
+                    Text("SwiftUI:")
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
@@ -25,6 +25,13 @@ struct ContentView: View {
         .padding()
     }
 }
+
+let a = Shared.Image(
+    id: "sldfn",
+    name: "ldsm",
+    saveDate: Shared.,
+    path: "lsdkmf"
+)
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
