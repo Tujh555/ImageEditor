@@ -1,9 +1,6 @@
 package org.example.project.presentation.image.list
 
-import android.content.ContentResolver
-import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,7 +18,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -78,8 +74,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Dialog
-import androidx.core.content.FileProvider
-import androidx.core.net.toFile
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -87,7 +81,6 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.example.project.FILE_PROVIDER_AUTHORITY
 import org.example.project.R
 import org.example.project.domain.uc.CreateFileForCamera
 import org.example.project.presentation.image.view.ImageViewScreen
@@ -189,10 +182,7 @@ internal fun ImageListScreenContent(
                     onDismissRequest = dismissDialog,
                     content = {
                         val shape = remember { RoundedCornerShape(16.dp) }
-                        val launcher = rememberLauncherForActivityResult(
-                            contract = ActivityResultContracts.StartActivityForResult(),
-                            onResult = {}
-                        )
+
                         Card(shape = shape) {
                             Column(
                                 modifier = Modifier.padding(8.dp),
@@ -215,39 +205,12 @@ internal fun ImageListScreenContent(
                                     modifier = Modifier.width(IntrinsicSize.Max),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    val context = LocalContext.current
                                     TextButton(
                                         onClick = {
-                                            try {
-                                                val sharedUri = if (image.path.scheme == ContentResolver.SCHEME_FILE) {
-                                                    FileProvider.getUriForFile(
-                                                        context,
-                                                        "${context.packageName}$FILE_PROVIDER_AUTHORITY",
-                                                        image.path.toFile()
-                                                    )
-                                                } else {
-                                                    image.path
-                                                }
-
-                                                launcher.launch(
-                                                    Intent(Intent.ACTION_SEND).apply {
-                                                        type = "image/*"
-                                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                                        putExtra(Intent.EXTRA_STREAM, sharedUri)
-                                                    }
-                                                )
-                                            } catch (e: Exception) {
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Что-то пошло не так",
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                    .show()
-                                            }
+                                            dismissDialog()
                                         },
                                     ) {
-                                        Text("Поделиться")
+                                        Text("Отменить")
                                     }
                                     TextButton(
                                         onClick = {
