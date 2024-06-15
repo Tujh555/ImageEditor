@@ -2,6 +2,7 @@ package org.example.project.utils
 
 import android.graphics.Bitmap
 import androidx.collection.LruCache
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 internal class BitmapStorage {
@@ -21,32 +22,30 @@ internal class BitmapStorage {
         }
     }
 
-    private var lastCachedImageNumber = INITIAL_CACHED_IMAGE_NUMBER
-        @Synchronized set
+    private val lastCachedImageNumber = AtomicInteger(INITIAL_CACHED_IMAGE_NUMBER)
 
     val cacheSize
         get() = lruCache.size()
 
     fun put(bitmap: Bitmap) {
-        lastCachedImageNumber++
-        lruCache.put(lastCachedImageNumber, bitmap)
+        lruCache.put(lastCachedImageNumber.incrementAndGet(), bitmap)
     }
 
     fun pop(): Bitmap? {
-        if (lastCachedImageNumber == INITIAL_CACHED_IMAGE_NUMBER) {
+        if (lastCachedImageNumber.get() == INITIAL_CACHED_IMAGE_NUMBER) {
             return null
         }
 
-        val lastBitmap = lruCache[lastCachedImageNumber]
-        lruCache.remove(lastCachedImageNumber)
-        lastCachedImageNumber--
+        val lastBitmap = lruCache[lastCachedImageNumber.get()]
+        lruCache.remove(lastCachedImageNumber.get())
+        lastCachedImageNumber.decrementAndGet()
 
         return lastBitmap
     }
 
     fun clear() {
         lruCache.evictAll()
-        lastCachedImageNumber = INITIAL_CACHED_IMAGE_NUMBER
+        lastCachedImageNumber.set(INITIAL_CACHED_IMAGE_NUMBER)
     }
 
     companion object {
