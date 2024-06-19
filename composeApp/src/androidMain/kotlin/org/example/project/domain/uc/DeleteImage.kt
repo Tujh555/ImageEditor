@@ -3,8 +3,10 @@ package org.example.project.domain.uc
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.core.net.toFile
 import implementation.domain.repository.ImageRepository
+import org.example.project.imageRootDirectory
 import java.io.File
 
 internal class DeleteImage(
@@ -15,7 +17,12 @@ internal class DeleteImage(
         if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
             context.contentResolver.delete(uri, null, null)
         } else {
-            uri.toFile().delete()
+            context.imageRootDirectory.listFiles()?.forEach { file ->
+                if (file.path == uri.path) {
+                    file.delete()
+                    return@forEach
+                }
+            }
         }
 
         repository.delete(id)
