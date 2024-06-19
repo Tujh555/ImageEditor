@@ -109,7 +109,14 @@ class DrawTransformation(private val startBitmap: ImageBitmap) : Transformation 
 
     override fun undo() {
         if (paths.size == 1) {
-            paths.last().first.reset()
+            paths.replaceAll {
+                Path() to Paint().apply {
+                    color = initialColors.first()
+                    strokeWidth = 10f
+                    style = PaintingStyle.Stroke
+                    isAntiAlias = true
+                }
+            }
             return
         }
 
