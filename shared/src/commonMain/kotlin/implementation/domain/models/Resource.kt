@@ -8,19 +8,9 @@ sealed interface Resource<out T> {
 
 fun <T> T.toSuccessResource() = Resource.Success(this)
 
-fun Throwable.toFailureResource() = Resource.Failure(this)
-
 inline fun <T> Resource<T>.onSuccess(block: (T) -> Unit): Resource<T> {
     if (this is Resource.Success) {
         block(data)
-    }
-
-    return this
-}
-
-inline fun <T> Resource<T>.onError(block: (Throwable?) -> Unit): Resource<T> {
-    if (this is Resource.Failure) {
-        block(throwable)
     }
 
     return this
